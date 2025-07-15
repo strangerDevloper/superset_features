@@ -123,3 +123,5 @@ docker/*local*
 
 # Jest test report
 test-report.html
+
+superset_feature

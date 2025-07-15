@@ -197,6 +197,7 @@ export const DEFAULT_BOOTSTRAP_DATA: BootstrapData = {
 
 export enum FilterPlugins {
   Select = 'filter_select',
+  SelectTimeRange = 'filter_select_time_range',
   Range = 'filter_range',
   Time = 'filter_time',
   TimeColumn = 'filter_timecolumn',

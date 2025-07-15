@@ -130,3 +130,38 @@ export function getDataRecordFormatter({
     return String(value);
   };
 }
+
+export const getSelectV4ExtraFormData = (
+  col: string,
+  value?: null | (string | number | boolean | null)[],
+  emptyFilter = false,
+  inverseSelection = false,
+): ExtraFormData => {
+  const extra: ExtraFormData = {};
+  // return extra;
+  if (emptyFilter) {
+    extra.adhoc_filters = [
+      {
+        expressionType: ExpressionTypes.Sql,
+        clause: Clauses.Where,
+        sqlExpression: '1 = 0',
+      },
+    ];
+  } else if (value !== undefined && value !== null && value.length !== 0) {
+    extra.custom_form_data = [
+      {
+        col: 'start_date',
+        op: inverseSelection ? ('NOT IN' as const) : '<=',
+        // @ts-ignore
+        val: value[0],
+      },
+      {
+        col: 'end_date',
+        op: inverseSelection ? ('NOT IN' as const) : '>=',
+        // @ts-ignore
+        val: value[1],
+      },
+    ];
+  }
+  return extra;
+};
