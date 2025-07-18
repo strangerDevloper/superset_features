@@ -214,6 +214,131 @@ class ExtraCache:
         if add_to_cache_keys:
             self.cache_key_wrapper(result)
         return result
+    
+    def custom_filter_values(
+        self, column: str, default: Optional[str] = None, remove_filter: bool = False
+    ) -> list[Any]:
+        """Gets a values for a particular filter as a list
+
+        This is useful if:
+            - you want to use a filter component to filter a query where the name of
+             filter component column doesn't match the one in the select statement
+            - you want to have the ability for filter inside the main query for speed
+            purposes
+
+        Usage example::
+
+            SELECT action, count(*) as times
+            FROM logs
+            WHERE
+                action in ({{ "'" + "','".join(custom_filter_values('action_type')) + "'" }})
+            GROUP BY action
+
+        :param column: column/filter name to lookup
+        :param default: default value to return if there's no matching columns
+        :param remove_filter: When set to true, mark the filter as processed,
+            removing it from the outer query. Useful when a filter should
+            only apply to the inner query
+        :return: returns a list of filter values
+        """
+        return_val: list[Any] = []
+        filters = self.custom_get_filters(column, remove_filter)
+        for flt in filters:
+            val = flt.get("val")
+            if isinstance(val, list):
+                return_val.extend(val)
+            elif val:
+                return_val.append(val)
+
+        if (not return_val) and default:
+            # If no values are found, return the default provided.
+            return_val = [default]
+
+        return return_val
+    
+    
+    def custom_get_filters(self, column: str, remove_filter: bool = False) -> list[Filter]:
+        """Get the filters applied to the given column. In addition
+           to returning values like the filter_values function
+           the get_filters function returns the operator specified in the explorer UI.
+
+        This is useful if:
+            - you want to handle more than the IN operator in your SQL clause
+            - you want to handle generating custom SQL conditions for a filter
+            - you want to have the ability for filter inside the main query for speed
+            purposes
+
+        Usage example::
+
+
+            WITH RECURSIVE
+                superiors(employee_id, manager_id, full_name, level, lineage) AS (
+                SELECT
+                    employee_id,
+                    manager_id,
+                    full_name,
+                1 as level,
+                employee_id as lineage
+                FROM
+                    employees
+                WHERE
+                1=1
+                {# Render a blank line #}
+                {%- for filter in get_filters('full_name', remove_filter=True) -%}
+                {%- if filter.get('op') == 'IN' -%}
+                    AND
+                    full_name IN ( {{ "'" + "', '".join(filter.get('val')) + "'" }} )
+                {%- endif -%}
+                {%- if filter.get('op') == 'LIKE' -%}
+                    AND
+                    full_name LIKE {{ "'" + filter.get('val') + "'" }}
+                {%- endif -%}
+                {%- endfor -%}
+                UNION ALL
+                    SELECT
+                        e.employee_id,
+                        e.manager_id,
+                        e.full_name,
+                s.level + 1 as level,
+                s.lineage
+                    FROM
+                        employees e,
+                    superiors s
+                    WHERE s.manager_id = e.employee_id
+            )
+
+
+            SELECT
+                employee_id, manager_id, full_name, level, lineage
+            FROM
+                superiors
+            order by lineage, level
+
+        :param column: column/filter name to lookup
+        :param remove_filter: When set to true, mark the filter as processed,
+            removing it from the outer query. Useful when a filter should
+            only apply to the inner query
+        :return: returns a list of filters
+        """
+        # pylint: disable=import-outside-toplevel
+        from superset.utils.core import FilterOperator
+        from superset.views.utils import get_form_data
+
+        form_data, _ = get_form_data()
+
+        filters: list[Filter] = []
+
+        if( form_data.get("custom_form_data")):
+            customFilters = form_data.get("custom_form_data", [])
+            print(" custom " ,customFilters)
+            # return customFilters
+            for customFilter in customFilters:
+                if(customFilter.get("col") == column):
+                    filters.append(customFilter)
+
+        return filters
+
+
 
     def filter_values(
         self, column: str, default: Optional[str] = None, remove_filter: bool = False
@@ -554,6 +679,7 @@ class JinjaTemplateProcessor(BaseTemplateProcessor):
                     safe_proxy, extra_cache.current_user_email
                 ),
                 "cache_key_wrapper": partial(safe_proxy, extra_cache.cache_key_wrapper),
+                "custom_filter_values" : partial(safe_proxy, extra_cache.custom_filter_values),
                 "filter_values": partial(safe_proxy, extra_cache.filter_values),
                 "get_filters": partial(safe_proxy, extra_cache.get_filters),
                 "dataset": partial(safe_proxy, dataset_macro_with_context),
