@@ -324,6 +324,7 @@ const FILTERS_WITH_ADHOC_FILTERS = ['filter_select', 'filter_range'];
 // TODO: Rename the filter plugins and remove this mapping
 const FILTER_TYPE_NAME_MAPPING = {
   [t('Select filter')]: t('Value'),
+  [t('Select time range filter')]: t('Value Time range'),
   [t('Range filter')]: t('Numerical range'),
   [t('Time filter')]: t('Time range'),
   [t('Time column')]: t('Time column'),

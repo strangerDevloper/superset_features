@@ -77,6 +77,7 @@ import {
   TimeFilterPlugin,
   TimeColumnFilterPlugin,
   TimeGrainFilterPlugin,
+  SelectTimeRangeFilterPlugin,
 } from 'src/filters/components';
 import { PivotTableChartPlugin as PivotTableChartPluginV2 } from '@superset-ui/plugin-chart-pivot-table';
 import { HandlebarsChartPlugin } from '@superset-ui/plugin-chart-handlebars';
@@ -165,6 +166,9 @@ export default class MainPreset extends Preset {
         new EchartsHeatmapChartPlugin().configure({ key: 'heatmap_v2' }),
         new EchartsHistogramChartPlugin().configure({ key: 'histogram_v2' }),
         new SelectFilterPlugin().configure({ key: FilterPlugins.Select }),
+        new SelectTimeRangeFilterPlugin().configure({
+          key: FilterPlugins.SelectTimeRange,
+        }),
         new RangeFilterPlugin().configure({ key: FilterPlugins.Range }),
         new TimeFilterPlugin().configure({ key: FilterPlugins.Time }),
         new TimeColumnFilterPlugin().configure({
