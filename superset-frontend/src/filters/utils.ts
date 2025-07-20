@@ -150,13 +150,13 @@ export const getSelectV4ExtraFormData = (
   } else if (value !== undefined && value !== null && value.length !== 0) {
     extra.custom_form_data = [
       {
-        col: 'start_date',
+        col: col,
         op: inverseSelection ? ('NOT IN' as const) : '<=',
         // @ts-ignore
         val: value[0],
       },
       {
-        col: 'end_date',
+        col: col,
         op: inverseSelection ? ('NOT IN' as const) : '>=',
         // @ts-ignore
         val: value[1],
